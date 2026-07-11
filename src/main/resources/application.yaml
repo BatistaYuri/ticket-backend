@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: ticket-backend
+
+  datasource:
+    url: jdbc:postgresql://localhost:5433/ticket_db
+    username: ticket_user
+    password: ticket_password
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+
+  flyway:
+    enabled: true
+
+server:
+  port: 8080
