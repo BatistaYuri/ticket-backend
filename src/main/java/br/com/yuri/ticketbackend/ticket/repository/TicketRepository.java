@@ -15,4 +15,14 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
             TicketType type,
             TicketStatus status
     );
+    Optional<Ticket> findFirstByStatusAndQueueCycleOrderByCalledAtDescIdDesc(
+            TicketStatus status,
+            Integer cycle
+    );
+
+    long countByStatusAndTypeAndQueueCycle(
+            TicketStatus status,
+            TicketType type,
+            Integer queueCycle
+    );
 }

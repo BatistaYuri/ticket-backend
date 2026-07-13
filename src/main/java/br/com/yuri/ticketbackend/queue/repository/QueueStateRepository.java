@@ -24,4 +24,11 @@ public interface QueueStateRepository extends JpaRepository<QueueState, Long> {
                         "Queue state was not initialized"
                 ));
     }
+
+    default QueueState getCurrentQueueState() {
+        return findById(QueueState.SINGLETON_ID)
+                .orElseThrow(() -> new IllegalStateException(
+                        "Queue state was not initialized")
+                );
+    }
 }

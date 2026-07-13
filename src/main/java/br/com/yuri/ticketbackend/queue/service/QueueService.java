@@ -1,5 +1,7 @@
 package br.com.yuri.ticketbackend.queue.service;
 
+import br.com.yuri.ticketbackend.queue.dto.CurrentTicketResponse;
+import br.com.yuri.ticketbackend.queue.dto.QueueStatusResponse;
 import br.com.yuri.ticketbackend.queue.entity.QueueState;
 import br.com.yuri.ticketbackend.queue.repository.QueueStateRepository;
 import br.com.yuri.ticketbackend.ticket.entity.Ticket;
@@ -28,7 +30,26 @@ public class QueueService {
         return nextTicket;
     }
 
+    public QueueStatusResponse getStatus() {
+        QueueState queueState = queueStateRepository.getCurrentQueueState();
+        Integer currentCycle = queueState.getCycle();
+        CurrentTicketResponse currentTicket = ticketRepository.findFirstByStatusAndQueueCycleOrderByCalledAtDescIdDesc(
+                TicketStatus.CALLED, currentCycle).map(this::toCurrentTicketResponse).orElse(null);
+
+        long waitingPreferred = ticketRepository.countByStatusAndTypeAndQueueCycle(TicketStatus.WAITING, TicketType.PREFERRED, currentCycle);
+        long waitingNormal = ticketRepository.countByStatusAndTypeAndQueueCycle(TicketStatus.WAITING, TicketType.NORMAL, currentCycle);
+        return new QueueStatusResponse(currentTicket, waitingPreferred, waitingNormal, currentCycle);
+    }
+
     private Optional<Ticket> findNextWaitingTicket(TicketType type){
         return ticketRepository.findFirstByTypeAndStatusOrderByCreatedAtAscIdAsc(type, TicketStatus.WAITING);
+    }
+
+    private CurrentTicketResponse toCurrentTicketResponse(Ticket ticket) {
+        return new CurrentTicketResponse(
+                ticket.getNumber(),
+                ticket.getType(),
+                ticket.getCalledAt()
+        );
     }
 }

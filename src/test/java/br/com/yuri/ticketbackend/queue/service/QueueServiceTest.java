@@ -1,7 +1,9 @@
 package br.com.yuri.ticketbackend.queue.service;
 
+import br.com.yuri.ticketbackend.queue.dto.QueueStatusResponse;
 import br.com.yuri.ticketbackend.queue.entity.QueueState;
 import br.com.yuri.ticketbackend.queue.repository.QueueStateRepository;
+import br.com.yuri.ticketbackend.queue.service.QueueService;
 import br.com.yuri.ticketbackend.ticket.entity.Ticket;
 import br.com.yuri.ticketbackend.ticket.entity.TicketStatus;
 import br.com.yuri.ticketbackend.ticket.entity.TicketType;
@@ -20,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.inOrder;
@@ -47,8 +50,6 @@ class QueueServiceTest {
                 ticketRepository,
                 queueStateRepository
         );
-
-        when(queueStateRepository.getLockCurrentQueueState()).thenReturn(queueState);
     }
 
     @Test
@@ -57,6 +58,9 @@ class QueueServiceTest {
                 1,
                 TicketType.PREFERRED
         );
+
+        when(queueStateRepository.getLockCurrentQueueState())
+                .thenReturn(queueState);
 
         when(ticketRepository
                 .findFirstByTypeAndStatusOrderByCreatedAtAscIdAsc(
@@ -93,7 +97,8 @@ class QueueServiceTest {
                 ticketRepository
         );
 
-        executionOrder.verify(queueStateRepository).getLockCurrentQueueState();
+        executionOrder.verify(queueStateRepository)
+                .getLockCurrentQueueState();
 
         executionOrder.verify(ticketRepository)
                 .findFirstByTypeAndStatusOrderByCreatedAtAscIdAsc(
@@ -108,6 +113,9 @@ class QueueServiceTest {
                 1,
                 TicketType.NORMAL
         );
+
+        when(queueStateRepository.getLockCurrentQueueState())
+                .thenReturn(queueState);
 
         when(ticketRepository
                 .findFirstByTypeAndStatusOrderByCreatedAtAscIdAsc(
@@ -145,7 +153,8 @@ class QueueServiceTest {
                 ticketRepository
         );
 
-        executionOrder.verify(queueStateRepository).getLockCurrentQueueState();
+        executionOrder.verify(queueStateRepository)
+                .getLockCurrentQueueState();
 
         executionOrder.verify(ticketRepository)
                 .findFirstByTypeAndStatusOrderByCreatedAtAscIdAsc(
@@ -162,6 +171,9 @@ class QueueServiceTest {
 
     @Test
     void shouldReturnEmptyWhenNoTicketIsWaiting() {
+        when(queueStateRepository.getLockCurrentQueueState())
+                .thenReturn(queueState);
+
         when(ticketRepository
                 .findFirstByTypeAndStatusOrderByCreatedAtAscIdAsc(
                         TicketType.PREFERRED,
@@ -180,7 +192,8 @@ class QueueServiceTest {
 
         assertFalse(result.isPresent());
 
-        verify(queueStateRepository).getLockCurrentQueueState();
+        verify(queueStateRepository)
+                .getLockCurrentQueueState();
 
         verify(ticketRepository)
                 .findFirstByTypeAndStatusOrderByCreatedAtAscIdAsc(
@@ -192,6 +205,189 @@ class QueueServiceTest {
                 .findFirstByTypeAndStatusOrderByCreatedAtAscIdAsc(
                         TicketType.NORMAL,
                         TicketStatus.WAITING
+                );
+    }
+
+    @Test
+    void shouldReturnQueueStatusWithCurrentTicketAndWaitingCounts() {
+        Integer currentCycle = 3;
+        LocalDateTime calledAt = LocalDateTime.of(
+                2026,
+                7,
+                13,
+                10,
+                35
+        );
+
+        Ticket currentTicket = new Ticket(
+                3,
+                TicketType.PREFERRED,
+                TicketStatus.WAITING,
+                currentCycle,
+                LocalDateTime.of(
+                        2026,
+                        7,
+                        13,
+                        10,
+                        30
+                )
+        );
+
+        currentTicket.markAsCalled(calledAt);
+
+        when(queueStateRepository.getCurrentQueueState())
+                .thenReturn(queueState);
+
+        when(queueState.getCycle())
+                .thenReturn(currentCycle);
+
+        when(ticketRepository
+                .findFirstByStatusAndQueueCycleOrderByCalledAtDescIdDesc(
+                        TicketStatus.CALLED,
+                        currentCycle
+                ))
+                .thenReturn(Optional.of(currentTicket));
+
+        when(ticketRepository.countByStatusAndTypeAndQueueCycle(
+                TicketStatus.WAITING,
+                TicketType.PREFERRED,
+                currentCycle
+        )).thenReturn(2L);
+
+        when(ticketRepository.countByStatusAndTypeAndQueueCycle(
+                TicketStatus.WAITING,
+                TicketType.NORMAL,
+                currentCycle
+        )).thenReturn(5L);
+
+        QueueStatusResponse response = queueService.getStatus();
+
+        assertAll(
+                () -> assertNotNull(response),
+                () -> assertEquals(
+                        currentCycle,
+                        response.cycle()
+                ),
+                () -> assertEquals(
+                        2L,
+                        response.waitingPreferred()
+                ),
+                () -> assertEquals(
+                        5L,
+                        response.waitingNormal()
+                ),
+                () -> assertNotNull(
+                        response.currentTicket()
+                ),
+                () -> assertEquals(
+                        "P0003",
+                        response.currentTicket().number()
+                ),
+                () -> assertEquals(
+                        TicketType.PREFERRED,
+                        response.currentTicket().type()
+                ),
+                () -> assertEquals(
+                        calledAt,
+                        response.currentTicket().calledAt()
+                )
+        );
+
+        verify(queueStateRepository)
+                .getCurrentQueueState();
+
+        verify(ticketRepository)
+                .findFirstByStatusAndQueueCycleOrderByCalledAtDescIdDesc(
+                        TicketStatus.CALLED,
+                        currentCycle
+                );
+
+        verify(ticketRepository)
+                .countByStatusAndTypeAndQueueCycle(
+                        TicketStatus.WAITING,
+                        TicketType.PREFERRED,
+                        currentCycle
+                );
+
+        verify(ticketRepository)
+                .countByStatusAndTypeAndQueueCycle(
+                        TicketStatus.WAITING,
+                        TicketType.NORMAL,
+                        currentCycle
+                );
+    }
+
+    @Test
+    void shouldReturnQueueStatusWithoutCurrentTicketWhenNoTicketWasCalled() {
+        Integer currentCycle = 1;
+
+        when(queueStateRepository.getCurrentQueueState())
+                .thenReturn(queueState);
+
+        when(queueState.getCycle())
+                .thenReturn(currentCycle);
+
+        when(ticketRepository
+                .findFirstByStatusAndQueueCycleOrderByCalledAtDescIdDesc(
+                        TicketStatus.CALLED,
+                        currentCycle
+                ))
+                .thenReturn(Optional.empty());
+
+        when(ticketRepository.countByStatusAndTypeAndQueueCycle(
+                TicketStatus.WAITING,
+                TicketType.PREFERRED,
+                currentCycle
+        )).thenReturn(0L);
+
+        when(ticketRepository.countByStatusAndTypeAndQueueCycle(
+                TicketStatus.WAITING,
+                TicketType.NORMAL,
+                currentCycle
+        )).thenReturn(3L);
+
+        QueueStatusResponse response = queueService.getStatus();
+
+        assertAll(
+                () -> assertNotNull(response),
+                () -> assertNull(
+                        response.currentTicket()
+                ),
+                () -> assertEquals(
+                        0L,
+                        response.waitingPreferred()
+                ),
+                () -> assertEquals(
+                        3L,
+                        response.waitingNormal()
+                ),
+                () -> assertEquals(
+                        currentCycle,
+                        response.cycle()
+                )
+        );
+
+        verify(queueStateRepository)
+                .getCurrentQueueState();
+
+        verify(ticketRepository)
+                .findFirstByStatusAndQueueCycleOrderByCalledAtDescIdDesc(
+                        TicketStatus.CALLED,
+                        currentCycle
+                );
+
+        verify(ticketRepository)
+                .countByStatusAndTypeAndQueueCycle(
+                        TicketStatus.WAITING,
+                        TicketType.PREFERRED,
+                        currentCycle
+                );
+
+        verify(ticketRepository)
+                .countByStatusAndTypeAndQueueCycle(
+                        TicketStatus.WAITING,
+                        TicketType.NORMAL,
+                        currentCycle
                 );
     }
 
