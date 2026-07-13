@@ -6,6 +6,7 @@ import br.com.yuri.ticketbackend.ticket.entity.Ticket;
 import br.com.yuri.ticketbackend.ticket.entity.TicketStatus;
 import br.com.yuri.ticketbackend.ticket.entity.TicketType;
 import br.com.yuri.ticketbackend.ticket.repository.TicketRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -21,6 +22,7 @@ public class TicketService {
         this.queueStateRepository = queueStateRepository;
     }
 
+    @Transactional
     public Ticket create(TicketType type){
         Objects.requireNonNull(type, "Ticket type must not be null");
         QueueState queueState = queueStateRepository.getLockCurrentQueueState();
