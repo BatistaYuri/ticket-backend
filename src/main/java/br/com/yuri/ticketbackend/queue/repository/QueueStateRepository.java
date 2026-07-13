@@ -17,4 +17,11 @@ public interface QueueStateRepository extends JpaRepository<QueueState, Long> {
         WHERE queueState.id = :id
         """)
     Optional<QueueState> findByIdForUpdate(@Param("id") Long id);
+
+    default QueueState getLockCurrentQueueState() {
+        return findByIdForUpdate(QueueState.SINGLETON_ID)
+                .orElseThrow(() -> new IllegalStateException(
+                        "Queue state was not initialized"
+                ));
+    }
 }

@@ -23,12 +23,7 @@ public class TicketService {
 
     public Ticket create(TicketType type){
         Objects.requireNonNull(type, "Ticket type must not be null");
-        QueueState queueState = queueStateRepository.findByIdForUpdate(QueueState.SINGLETON_ID).orElseThrow(() ->
-                new IllegalStateException(
-                        "Queue state was not initialized"
-                )
-        );
-
+        QueueState queueState = queueStateRepository.getLockCurrentQueueState();
         Integer sequenceNumber = this.getNextSequence(queueState, type);
         return ticketRepository.save(new Ticket(sequenceNumber, type, TicketStatus.WAITING, queueState.getCycle(), LocalDateTime.now()));
     }
