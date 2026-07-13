@@ -13,9 +13,9 @@ public class QueueState {
     @Id
     private Long id;
 
-    @Column(name = "normal_sequence_number", nullable = false)
+    @Column(name = "normal_sequence", nullable = false)
     private Integer normalSequenceNumber;
-    @Column(name = "preferred_sequence_number", nullable = false)
+    @Column(name = "preferred_sequence", nullable = false)
     private Integer preferredSequenceNumber;
     @Column(name = "cycle", nullable = false)
     private Integer cycle;

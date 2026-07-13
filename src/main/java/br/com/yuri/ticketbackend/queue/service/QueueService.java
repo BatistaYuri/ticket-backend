@@ -8,6 +8,7 @@ import br.com.yuri.ticketbackend.ticket.entity.Ticket;
 import br.com.yuri.ticketbackend.ticket.entity.TicketStatus;
 import br.com.yuri.ticketbackend.ticket.entity.TicketType;
 import br.com.yuri.ticketbackend.ticket.repository.TicketRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -23,6 +24,7 @@ public class QueueService {
         this.queueStateRepository = queueStateRepository;
     }
 
+    @Transactional
     public Optional<Ticket> callNextTicket() {
         queueStateRepository.getLockCurrentQueueState();
         Optional<Ticket> nextTicket = findNextWaitingTicket(TicketType.PREFERRED).or(() -> findNextWaitingTicket(TicketType.NORMAL));
@@ -41,6 +43,7 @@ public class QueueService {
         return new QueueStatusResponse(currentTicket, waitingPreferred, waitingNormal, currentCycle);
     }
 
+    @Transactional
     public void resetQueue() {
         QueueState queueState =  queueStateRepository.getLockCurrentQueueState();
         queueState.reset();
