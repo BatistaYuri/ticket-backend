@@ -6,7 +6,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "tickets")
+@Table(name = "queue_state")
 public class QueueState {
     public static final Long SINGLETON_ID = 1L;
 
