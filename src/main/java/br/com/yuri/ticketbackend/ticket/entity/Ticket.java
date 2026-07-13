@@ -3,6 +3,7 @@ package br.com.yuri.ticketbackend.ticket.entity;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 @Entity
 @Table(name = "tickets")
@@ -78,6 +79,16 @@ public class Ticket {
             case NORMAL -> "N%04d".formatted(sequenceNumber);
             case PREFERRED -> "P%04d".formatted(sequenceNumber);
         };
+    }
+
+    public void markAsCalled(LocalDateTime calledAt) {
+        LocalDateTime validCalledAt = Objects.requireNonNull(calledAt, "Called at must not be null");
+        if(status != TicketStatus.WAITING) {
+            throw new IllegalStateException("Only waiting tickets can be called");
+        }
+
+        this.status = TicketStatus.CALLED;
+        this.calledAt = validCalledAt;
     }
 
 }
