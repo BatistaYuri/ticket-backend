@@ -1,9 +1,15 @@
 package br.com.yuri.ticketbackend.queue.entity;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 
+@Entity
+@Table(name = "tickets")
 public class QueueState {
+    public static final Long SINGLETON_ID = 1L;
+
     @Id
     private Long id;
 
@@ -38,5 +44,15 @@ public class QueueState {
 
     public Integer getCycle() {
         return cycle;
+    }
+
+    public Integer incrementAndGetNormalSequenceNumber() {
+        normalSequenceNumber++;
+        return normalSequenceNumber;
+    }
+
+    public Integer incrementAndGetPreferredSequenceNumber() {
+        preferredSequenceNumber++;
+        return preferredSequenceNumber;
     }
 }
