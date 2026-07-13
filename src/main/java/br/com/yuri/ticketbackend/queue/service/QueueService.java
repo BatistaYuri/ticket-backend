@@ -41,6 +41,11 @@ public class QueueService {
         return new QueueStatusResponse(currentTicket, waitingPreferred, waitingNormal, currentCycle);
     }
 
+    public void resetQueue() {
+        QueueState queueState =  queueStateRepository.getLockCurrentQueueState();
+        queueState.reset();
+    }
+
     private Optional<Ticket> findNextWaitingTicket(TicketType type){
         return ticketRepository.findFirstByTypeAndStatusOrderByCreatedAtAscIdAsc(type, TicketStatus.WAITING);
     }

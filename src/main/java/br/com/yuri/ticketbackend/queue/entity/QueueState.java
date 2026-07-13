@@ -56,4 +56,10 @@ public class QueueState {
         preferredSequenceNumber++;
         return preferredSequenceNumber;
     }
+
+    public void reset() {
+        normalSequenceNumber = 0;
+        preferredSequenceNumber = 0;
+        cycle++;
+    }
 }
