@@ -1,4 +1,4 @@
-package br.com.yuri.ticket;
+package br.com.yuri.ticketbackend;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

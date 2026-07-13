@@ -1,4 +1,4 @@
-package br.com.yuri.ticket.controller;
+package br.com.yuri.ticketbackend.controller;
 
 import java.time.OffsetDateTime;
 import java.util.Map;
