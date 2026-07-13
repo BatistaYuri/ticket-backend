@@ -28,4 +28,10 @@ public class ManagerQueueController {
 
         return ResponseEntity.ok(TicketResponse.from(nextTicket.get()));
     }
+
+    @PostMapping("/reset")
+    public ResponseEntity<Void> resetQueue() {
+        queueService.resetQueue();
+        return ResponseEntity.noContent().build();
+    }
 }

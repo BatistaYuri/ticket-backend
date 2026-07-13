@@ -29,6 +29,7 @@ import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 @ExtendWith(MockitoExtension.class)
 class QueueServiceTest {
@@ -389,6 +390,37 @@ class QueueServiceTest {
                         TicketType.NORMAL,
                         currentCycle
                 );
+    }
+
+    @Test
+    void shouldResetSequencesAndIncrementCycle() {
+        QueueState currentQueueState =
+                new QueueState(1L, 15, 8, 1);
+
+        when(queueStateRepository.getLockCurrentQueueState())
+                .thenReturn(currentQueueState);
+
+        queueService.resetQueue();
+
+        assertAll(
+                () -> assertEquals(
+                        0,
+                        currentQueueState.getNormalSequenceNumber()
+                ),
+                () -> assertEquals(
+                        0,
+                        currentQueueState.getPreferredSequenceNumber()
+                ),
+                () -> assertEquals(
+                        2,
+                        currentQueueState.getCycle()
+                )
+        );
+
+        verify(queueStateRepository)
+                .getLockCurrentQueueState();
+
+        verifyNoInteractions(ticketRepository);
     }
 
     private Ticket createWaitingTicket(
