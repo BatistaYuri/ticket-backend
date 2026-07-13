@@ -32,13 +32,12 @@ public class Ticket {
     @Column(name = "calledAt")
     private LocalDateTime calledAt;
 
-    public Ticket(Integer sequenceNumber, TicketType type, TicketStatus status, Integer queueCycle, LocalDateTime createdAt, LocalDateTime calledAt) {
+    public Ticket(Integer sequenceNumber, TicketType type, TicketStatus status, Integer queueCycle, LocalDateTime createdAt) {
         this.sequenceNumber = sequenceNumber;
         this.type = type;
         this.status = status;
         this.queueCycle = queueCycle;
         this.createdAt = createdAt;
-        this.calledAt = calledAt;
     }
 
     protected Ticket() {
@@ -71,6 +70,14 @@ public class Ticket {
 
     public LocalDateTime getCalledAt() {
         return calledAt;
+    }
+
+    @Transient
+    public String getNumber(){
+        return switch (type) {
+            case NORMAL -> "N%04d".formatted(sequenceNumber);
+            case PREFERRED -> "P%04d".formatted(sequenceNumber);
+        };
     }
 
 }
