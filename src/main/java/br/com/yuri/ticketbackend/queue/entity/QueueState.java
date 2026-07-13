@@ -20,7 +20,8 @@ public class QueueState {
     @Column(name = "cycle", nullable = false)
     private Integer cycle;
 
-    public QueueState(Integer normalSequenceNumber, Integer preferredSequenceNumber, Integer cycle) {
+    public QueueState(Long id, Integer normalSequenceNumber, Integer preferredSequenceNumber, Integer cycle) {
+        this.id = id;
         this.normalSequenceNumber = normalSequenceNumber;
         this.preferredSequenceNumber = preferredSequenceNumber;
         this.cycle = cycle;
