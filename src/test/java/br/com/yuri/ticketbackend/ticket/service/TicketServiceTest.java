@@ -13,8 +13,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.Optional;
-
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -48,9 +46,8 @@ class TicketServiceTest {
                 2
         );
 
-        when(queueStateRepository.findByIdForUpdate(
-                QueueState.SINGLETON_ID
-        )).thenReturn(Optional.of(queueState));
+        when(queueStateRepository.getLockCurrentQueueState())
+                .thenReturn(queueState);
 
         when(ticketRepository.save(any(Ticket.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
@@ -61,9 +58,10 @@ class TicketServiceTest {
                 ArgumentCaptor.forClass(Ticket.class);
 
         verify(queueStateRepository)
-                .findByIdForUpdate(QueueState.SINGLETON_ID);
+                .getLockCurrentQueueState();
 
-        verify(ticketRepository).save(ticketCaptor.capture());
+        verify(ticketRepository)
+                .save(ticketCaptor.capture());
 
         Ticket savedTicket = ticketCaptor.getValue();
 
@@ -108,9 +106,8 @@ class TicketServiceTest {
                 2
         );
 
-        when(queueStateRepository.findByIdForUpdate(
-                QueueState.SINGLETON_ID
-        )).thenReturn(Optional.of(queueState));
+        when(queueStateRepository.getLockCurrentQueueState())
+                .thenReturn(queueState);
 
         when(ticketRepository.save(any(Ticket.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
@@ -121,9 +118,10 @@ class TicketServiceTest {
                 ArgumentCaptor.forClass(Ticket.class);
 
         verify(queueStateRepository)
-                .findByIdForUpdate(QueueState.SINGLETON_ID);
+                .getLockCurrentQueueState();
 
-        verify(ticketRepository).save(ticketCaptor.capture());
+        verify(ticketRepository)
+                .save(ticketCaptor.capture());
 
         Ticket savedTicket = ticketCaptor.getValue();
 
@@ -161,9 +159,10 @@ class TicketServiceTest {
 
     @Test
     void shouldThrowExceptionWhenQueueStateDoesNotExist() {
-        when(queueStateRepository.findByIdForUpdate(
-                QueueState.SINGLETON_ID
-        )).thenReturn(Optional.empty());
+        when(queueStateRepository.getLockCurrentQueueState())
+                .thenThrow(new IllegalStateException(
+                        "Queue state was not initialized"
+                ));
 
         IllegalStateException exception = assertThrows(
                 IllegalStateException.class,
@@ -176,7 +175,7 @@ class TicketServiceTest {
         );
 
         verify(queueStateRepository)
-                .findByIdForUpdate(QueueState.SINGLETON_ID);
+                .getLockCurrentQueueState();
 
         verify(ticketRepository, never())
                 .save(any(Ticket.class));
