@@ -1,6 +1,8 @@
 package br.com.yuri.ticketbackend.security.controller;
 
 import br.com.yuri.ticketbackend.security.dto.TokenResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwsHeader;
@@ -27,6 +29,8 @@ public class AuthenticationController {
         this.jwtEncoder = jwtEncoder;
     }
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(AuthenticationController.class);
+
     @PostMapping("/manager-token")
     public ResponseEntity<TokenResponse> generateManagerToken() {
         Instant issuedAt = Instant.now();
@@ -52,6 +56,7 @@ public class AuthenticationController {
                 )
                 .getTokenValue();
 
+        LOGGER.info("Manager token generated: subject=manager, expiresAt={}", expiresAt);
         return ResponseEntity.ok(
                 new TokenResponse(token)
         );

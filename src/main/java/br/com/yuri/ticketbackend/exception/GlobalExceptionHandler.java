@@ -34,6 +34,13 @@ public class GlobalExceptionHandler
             IllegalArgumentException exception,
             HttpServletRequest request
     ) {
+        LOGGER.warn(
+                "Invalid request argument: method={}, path={}, message={}",
+                request.getMethod(),
+                request.getRequestURI(),
+                exception.getMessage()
+        );
+
         return buildResponse(
                 HttpStatus.BAD_REQUEST,
                 exception.getMessage(),
@@ -46,6 +53,14 @@ public class GlobalExceptionHandler
             IllegalStateException exception,
             HttpServletRequest request
     ) {
+        LOGGER.warn(
+                "Request conflicts with application state: "
+                        + "method={}, path={}, message={}",
+                request.getMethod(),
+                request.getRequestURI(),
+                exception.getMessage()
+        );
+
         return buildResponse(
                 HttpStatus.CONFLICT,
                 exception.getMessage(),
@@ -58,10 +73,18 @@ public class GlobalExceptionHandler
             DataIntegrityViolationException exception,
             HttpServletRequest request
     ) {
+        Throwable rootCause =
+                exception.getMostSpecificCause();
+
         LOGGER.warn(
-                "Data integrity violation while processing request {}",
+                "Data integrity violation: "
+                        + "method={}, path={}, cause={}",
+                request.getMethod(),
                 request.getRequestURI(),
-                exception
+                getMessageOrDefault(
+                        rootCause.getMessage(),
+                        rootCause.getClass().getSimpleName()
+                )
         );
 
         return buildResponse(
@@ -77,7 +100,8 @@ public class GlobalExceptionHandler
             HttpServletRequest request
     ) {
         LOGGER.error(
-                "Unexpected error while processing request {}",
+                "Unexpected application error: method={}, path={}",
+                request.getMethod(),
                 request.getRequestURI(),
                 exception
         );
@@ -108,6 +132,12 @@ public class GlobalExceptionHandler
                         ))
                         .toList();
 
+        LOGGER.warn(
+                "Request validation failed: path={}, fieldErrorCount={}",
+                getRequestPath(request),
+                fieldErrors.size()
+        );
+
         ApiErrorResponse response = createResponse(
                 status,
                 "Request validation failed",
@@ -131,6 +161,11 @@ public class GlobalExceptionHandler
             HttpStatusCode status,
             WebRequest request
     ) {
+        LOGGER.warn(
+                "Malformed request body: path={}",
+                getRequestPath(request)
+        );
+
         ApiErrorResponse response = createResponse(
                 status,
                 "Request body is invalid or malformed",
@@ -154,6 +189,11 @@ public class GlobalExceptionHandler
             HttpStatusCode status,
             WebRequest request
     ) {
+        LOGGER.debug(
+                "Resource not found: path={}",
+                getRequestPath(request)
+        );
+
         ApiErrorResponse response = createResponse(
                 status,
                 "Resource not found",
@@ -177,9 +217,16 @@ public class GlobalExceptionHandler
             HttpStatusCode status,
             WebRequest request
     ) {
-        String message = "HTTP method "
-                + exception.getMethod()
-                + " is not supported for this endpoint";
+        LOGGER.warn(
+                "HTTP method not supported: path={}, method={}",
+                getRequestPath(request),
+                exception.getMethod()
+        );
+
+        String message =
+                "HTTP method "
+                        + exception.getMethod()
+                        + " is not supported for this endpoint";
 
         ApiErrorResponse response = createResponse(
                 status,
@@ -215,6 +262,12 @@ public class GlobalExceptionHandler
             );
         }
 
+        logFrameworkException(
+                exception,
+                status,
+                request
+        );
+
         ApiErrorResponse response = createResponse(
                 status,
                 getFrameworkErrorMessage(body, status),
@@ -228,6 +281,31 @@ public class GlobalExceptionHandler
                 headers,
                 status,
                 request
+        );
+    }
+
+    private void logFrameworkException(
+            Exception exception,
+            HttpStatusCode status,
+            WebRequest request
+    ) {
+        if (status.is5xxServerError()) {
+            LOGGER.error(
+                    "Framework error: status={}, path={}",
+                    status.value(),
+                    getRequestPath(request),
+                    exception
+            );
+
+            return;
+        }
+
+        LOGGER.warn(
+                "Request rejected by framework: "
+                        + "status={}, path={}, reason={}",
+                status.value(),
+                getRequestPath(request),
+                exception.getClass().getSimpleName()
         );
     }
 

@@ -1,5 +1,7 @@
 package br.com.yuri.ticketbackend.security.config;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,8 +22,8 @@ import java.nio.charset.StandardCharsets;
 @Configuration(proxyBeanMethods = false)
 public class SecurityConfig {
 
-    private static final String KEY_ALGORITHM =
-            "HmacSHA256";
+    private static final String KEY_ALGORITHM = "HmacSHA256";
+    private static final Logger LOGGER = LoggerFactory.getLogger(SecurityConfig.class);
 
     @Bean
     SecurityFilterChain securityFilterChain(
