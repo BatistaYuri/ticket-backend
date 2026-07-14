@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/manage/queue")
+@RequestMapping("/api/manager/queue")
 public class ManagerQueueController {
     private final QueueService queueService;
 
