@@ -9,6 +9,8 @@ import br.com.yuri.ticketbackend.ticket.entity.TicketStatus;
 import br.com.yuri.ticketbackend.ticket.entity.TicketType;
 import br.com.yuri.ticketbackend.ticket.repository.TicketRepository;
 import jakarta.transaction.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -18,6 +20,7 @@ import java.util.Optional;
 public class QueueService {
     private final TicketRepository ticketRepository;
     private final QueueStateRepository queueStateRepository;
+    private static final Logger LOGGER = LoggerFactory.getLogger(QueueService.class);
 
     public QueueService(TicketRepository ticketRepository, QueueStateRepository queueStateRepository) {
         this.ticketRepository = ticketRepository;
@@ -26,10 +29,30 @@ public class QueueService {
 
     @Transactional
     public Optional<Ticket> callNextTicket() {
-        queueStateRepository.getLockCurrentQueueState();
+        QueueState queueState = queueStateRepository.getLockCurrentQueueState();
         Optional<Ticket> nextTicket = findNextWaitingTicket(TicketType.PREFERRED).or(() -> findNextWaitingTicket(TicketType.NORMAL));
-        nextTicket.ifPresent(ticket -> ticket.markAsCalled(LocalDateTime.now()));
-        return nextTicket;
+        if (nextTicket.isEmpty()) {
+            LOGGER.info(
+                    "No waiting ticket found: cycle={}",
+                    queueState.getCycle()
+            );
+
+            return Optional.empty();
+        }
+
+        Ticket ticket = nextTicket.get();
+
+        ticket.markAsCalled(LocalDateTime.now());
+
+        LOGGER.info(
+                "Ticket called: id={}, number={}, type={}, cycle={}",
+                ticket.getId(),
+                ticket.getNumber(),
+                ticket.getType(),
+                ticket.getQueueCycle()
+        );
+
+        return Optional.of(ticket);
     }
 
     public QueueStatusResponse getStatus() {
@@ -47,6 +70,7 @@ public class QueueService {
     public void resetQueue() {
         QueueState queueState =  queueStateRepository.getLockCurrentQueueState();
         queueState.reset();
+        LOGGER.info("Queue reset: newCycle={}", queueState.getCycle());
     }
 
     private Optional<Ticket> findNextWaitingTicket(TicketType type){
